@@ -1,0 +1,40 @@
+---
+# ubuntu-defang
+# Disables and neuters undesirable things in Ubuntu Linux
+
+- name: ubuntu-defang
+  hosts: all
+
+  tasks:
+
+  - name: Disable motd-news in config
+    ansible.builtin.lineinfile:
+      path: /etc/default/motd-news
+      state: present
+      regexp: '^ENABLED='
+      line: 'ENABLED=0'
+
+  - name: Stop and disable motd-news service
+    ansible.builtin.systemd:
+      name: motd-news
+      state: stopped
+      masked: yes
+      # enabled: no # motd.news is a static service and cannot be "disabled", only masked
+
+  - name: Stop and disable motd-news.timer service
+    ansible.builtin.systemd:
+      name: motd-news.timer
+      state: stopped
+      masked: yes
+      enabled: no
+
+  - name: Add Ubuntu telemetry hosts to /etc/hosts
+    ansible.builtin.blockinfile:
+      path: /etc/hosts
+      backup: yes
+      marker: "# {mark} ANSIBLE MANAGED BLOCK"
+      block: |
+        # The following lines disable Canonical's telemetry
+        127.0.0.1 www.metrics.ubuntu.com metrics.ubuntu.com
+        127.0.0.1 www.popcon.ubuntu.com popcon.ubuntu.com
+
